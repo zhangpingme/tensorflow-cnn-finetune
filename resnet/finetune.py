@@ -10,8 +10,8 @@ from preprocessor import BatchPreprocessor
 tf.app.flags.DEFINE_float('learning_rate', 0.0001, 'Learning rate for adam optimizer')
 tf.app.flags.DEFINE_integer('resnet_depth', 50, 'ResNet architecture to be used: 50, 101 or 152')
 tf.app.flags.DEFINE_integer('num_epochs', 10, 'Number of epochs for training')
-tf.app.flags.DEFINE_integer('num_classes', 26, 'Number of classes')
-tf.app.flags.DEFINE_integer('batch_size', 128, 'Batch size')
+tf.app.flags.DEFINE_integer('num_classes', 2, 'Number of classes')
+tf.app.flags.DEFINE_integer('batch_size', 32, 'Batch size')
 tf.app.flags.DEFINE_string('train_layers', 'fc', 'Finetuning layers, seperated by commas')
 tf.app.flags.DEFINE_string('multi_scale', '', 'As preprocessing; scale the image randomly between 2 numbers and crop randomly at network\'s input size')
 tf.app.flags.DEFINE_string('training_file', '../data/train.txt', 'Training dataset file')
@@ -53,7 +53,7 @@ def main(_):
     flags_file.close()
 
     # Placeholders
-    x = tf.placeholder(tf.float32, [FLAGS.batch_size, 224, 224, 3])
+    x = tf.placeholder(tf.float32, [FLAGS.batch_size, 100, 100, 3])
     y = tf.placeholder(tf.float32, [None, FLAGS.num_classes])
     is_training = tf.placeholder('bool', [])
 
@@ -84,8 +84,8 @@ def main(_):
         multi_scale = None
 
     train_preprocessor = BatchPreprocessor(dataset_file_path=FLAGS.training_file, num_classes=FLAGS.num_classes,
-                                           output_size=[224, 224], horizontal_flip=True, shuffle=True, multi_scale=multi_scale)
-    val_preprocessor = BatchPreprocessor(dataset_file_path=FLAGS.val_file, num_classes=FLAGS.num_classes, output_size=[224, 224])
+                                           output_size=[100, 100], horizontal_flip=True, shuffle=True, multi_scale=multi_scale)
+    val_preprocessor = BatchPreprocessor(dataset_file_path=FLAGS.val_file, num_classes=FLAGS.num_classes, output_size=[100, 100])
 
     # Get the number of training/validation steps per epoch
     train_batches_per_epoch = np.floor(len(train_preprocessor.labels) / FLAGS.batch_size).astype(np.int16)

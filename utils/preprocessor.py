@@ -7,7 +7,7 @@ import cv2
 
 class BatchPreprocessor(object):
 
-    def __init__(self, dataset_file_path, num_classes, output_size=[227, 227], horizontal_flip=False, shuffle=False,
+    def __init__(self, dataset_file_path, num_classes, output_size=[100, 100], horizontal_flip=False, shuffle=False,
                  mean_color=[132.2766, 139.6506, 146.9702], multi_scale=None):
         self.num_classes = num_classes
         self.output_size = output_size
