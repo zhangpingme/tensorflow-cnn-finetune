@@ -1,5 +1,5 @@
 /home/dgurkaynak/Projects/marvel-dataset/test/0/190995.jpg 0
-/home/dgurkaynak/Projects/marvel-dataset/test/0/1078004.jpg 0
+/homewdwqa/dgurkaynak/Projects/marvel-dataset/test/0/1078004.jpg 0
 /home/dgurkaynak/Projects/marvel-dataset/test/0/996018.jpg 0
 /home/dgurkaynak/Projects/marvel-dataset/test/0/1805173.jpg 0
 /home/dgurkaynak/Projects/marvel-dataset/test/0/600477.jpg 0
