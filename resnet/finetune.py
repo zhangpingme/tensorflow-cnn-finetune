@@ -7,18 +7,19 @@ sys.path.insert(0, '../utils')
 from preprocessor import BatchPreprocessor
 
 
-tf.app.flags.DEFINE_float('learning_rate', 0.0001, 'Learning rate for adam optimizer')
-tf.app.flags.DEFINE_integer('resnet_depth', 50, 'ResNet architecture to be used: 50, 101 or 152')
-tf.app.flags.DEFINE_integer('num_epochs', 10, 'Number of epochs for training')
-tf.app.flags.DEFINE_integer('num_classes', 2, 'Number of classes')
-tf.app.flags.DEFINE_integer('batch_size', 32, 'Batch size')
-tf.app.flags.DEFINE_string('train_layers', 'fc', 'Finetuning layers, seperated by commas')
+tf.app.flags.DEFINE_float('learning_rate', 0.0001, 'Learning rate for adam optimizer') # 学习率 0.0001
+tf.app.flags.DEFINE_integer('resnet_depth', 50, 'ResNet architecture to be used: 50, 101 or 152') # resnet层数为50
+tf.app.flags.DEFINE_integer('num_epochs', 10, 'Number of epochs for training') # 训练批次为10次
+tf.app.flags.DEFINE_integer('num_classes', 2, 'Number of classes') # 类别数目为2类
+tf.app.flags.DEFINE_integer('batch_size', 32, 'Batch size') # 每批次的样本数目
+tf.app.flags.DEFINE_string('train_layers', 'fc', 'Finetuning layers, seperated by commas') # 训练层为fc
 tf.app.flags.DEFINE_string('multi_scale', '', 'As preprocessing; scale the image randomly between 2 numbers and crop randomly at network\'s input size')
-tf.app.flags.DEFINE_string('training_file', '../data/train.txt', 'Training dataset file')
+tf.app.flags.DEFINE_string('training_file', '../data/train.txt', 'Training dataset file') # 训练集和验证集的位置
 tf.app.flags.DEFINE_string('val_file', '../data/val.txt', 'Validation dataset file')
-tf.app.flags.DEFINE_string('tensorboard_root_dir', '../training', 'Root directory to put the training logs and weights')
+tf.app.flags.DEFINE_string('tensorboard_root_dir', '../training', 'Root directory to put the training logs and weights') # 模型和权重的存储位置
 tf.app.flags.DEFINE_integer('log_step', 10, 'Logging period in terms of iteration')
 
+# FLAGS包含了设置的参数值
 FLAGS = tf.app.flags.FLAGS
 
 
@@ -152,4 +153,5 @@ def main(_):
             print("{} Model checkpoint saved at {}".format(datetime.datetime.now(), checkpoint_path))
 
 if __name__ == '__main__':
+    # app是tf的一个类，在flags设置好参数后，执行run
     tf.app.run()
