@@ -6,34 +6,33 @@ from model import ResNetModel
 sys.path.insert(0, '../utils')
 from preprocessor import BatchPreprocessor
 
+learning_rate = 0.0001  # Learning rate for adam optimizer  学习率
+resnet_depth = 50       # ResNet架构的层数
+num_epochs = 10         # 训练的批次数
+batch_size = 32         # 每批次的样本数目
+log_step = 10           # Logging period in terms of iteration
 
-tf.app.flags.DEFINE_float('learning_rate', 0.0001, 'Learning rate for adam optimizer') # 学习率 0.0001
-tf.app.flags.DEFINE_integer('resnet_depth', 50, 'ResNet architecture to be used: 50, 101 or 152') # resnet层数为50
-tf.app.flags.DEFINE_integer('num_epochs', 10, 'Number of epochs for training') # 训练批次为10次
-tf.app.flags.DEFINE_integer('num_classes', 2, 'Number of classes') # 类别数目为2类
-tf.app.flags.DEFINE_integer('batch_size', 32, 'Batch size') # 每批次的样本数目
-tf.app.flags.DEFINE_string('train_layers', 'fc', 'Finetuning layers, seperated by commas') # 训练层为fc
-tf.app.flags.DEFINE_string('multi_scale', '', 'As preprocessing; scale the image randomly between 2 numbers and crop randomly at network\'s input size')
-tf.app.flags.DEFINE_string('training_file', '../data/train.txt', 'Training dataset file') # 训练集和验证集的位置
-tf.app.flags.DEFINE_string('val_file', '../data/val.txt', 'Validation dataset file')
-tf.app.flags.DEFINE_string('tensorboard_root_dir', '../training', 'Root directory to put the training logs and weights') # 模型和权重的存储位置
-tf.app.flags.DEFINE_integer('log_step', 10, 'Logging period in terms of iteration')
+training_file = '../data/train.txt'  # Training dataset file  训练集的位置
+val_file = '../data/val.txt'         # Validation dataset file  验证集的位置
+tensorboard_root_dir = '../training' # Root directory to put the training logs and weights  模型和权重的存储位置
 
-# FLAGS包含了设置的参数值
-FLAGS = tf.app.flags.FLAGS
+# height为传入图片的高度，width为传入图片的宽度，num_classes为分类数
+def main(height,width,num_classes):
+    train_layers = 'fc'  # finetuning layers, seperated by commas
+    multi_scale = ''     # As preprocessing; scale the image randomly between 2 numbers and crop randomly at network\'s input size
 
-
-def main(_):
     # Create training directories
     now = datetime.datetime.now()
+    # 格式化输出
     train_dir_name = now.strftime('resnet_%Y%m%d_%H%M%S')
-    train_dir = os.path.join(FLAGS.tensorboard_root_dir, train_dir_name)
+    train_dir = os.path.join(tensorboard_root_dir, train_dir_name)
     checkpoint_dir = os.path.join(train_dir, 'checkpoint')
     tensorboard_dir = os.path.join(train_dir, 'tensorboard')
     tensorboard_train_dir = os.path.join(tensorboard_dir, 'train')
     tensorboard_val_dir = os.path.join(tensorboard_dir, 'val')
 
-    if not os.path.isdir(FLAGS.tensorboard_root_dir): os.mkdir(FLAGS.tensorboard_root_dir)
+    # 如果不存在这个目录，则新建这样的一个目录  if not os.path.isdir()    os.mkdir()
+    if not os.path.isdir(tensorboard_root_dir): os.mkdir(tensorboard_root_dir)
     if not os.path.isdir(train_dir): os.mkdir(train_dir)
     if not os.path.isdir(checkpoint_dir): os.mkdir(checkpoint_dir)
     if not os.path.isdir(tensorboard_dir): os.mkdir(tensorboard_dir)
@@ -43,32 +42,34 @@ def main(_):
     # Write flags to txt
     flags_file_path = os.path.join(train_dir, 'flags.txt')
     flags_file = open(flags_file_path, 'w')
-    flags_file.write('learning_rate={}\n'.format(FLAGS.learning_rate))
-    flags_file.write('resnet_depth={}\n'.format(FLAGS.resnet_depth))
-    flags_file.write('num_epochs={}\n'.format(FLAGS.num_epochs))
-    flags_file.write('batch_size={}\n'.format(FLAGS.batch_size))
-    flags_file.write('train_layers={}\n'.format(FLAGS.train_layers))
-    flags_file.write('multi_scale={}\n'.format(FLAGS.multi_scale))
-    flags_file.write('tensorboard_root_dir={}\n'.format(FLAGS.tensorboard_root_dir))
-    flags_file.write('log_step={}\n'.format(FLAGS.log_step))
+    flags_file.write('learning_rate={}\n'.format(learning_rate))
+    flags_file.write('resnet_depth={}\n'.format(resnet_depth))
+    flags_file.write('num_epochs={}\n'.format(num_epochs))
+    flags_file.write('batch_size={}\n'.format(batch_size))
+    flags_file.write('train_layer={}\n'.format(train_layers))
+    flags_file.write('multi_scale={}\n'.format(multi_scale))
+    flags_file.write('tensorboard_root_dir={}\n'.format(tensorboard_root_dir))
+    flags_file.write('log_step={}\n'.format(log_step))
     flags_file.close()
 
-    # Placeholders
-    x = tf.placeholder(tf.float32, [FLAGS.batch_size, 100, 100, 3])
-    y = tf.placeholder(tf.float32, [None, FLAGS.num_classes])
+    # Placeholders，占位符，x是输入数据的占位符，shape=(batch_size,height,width,3)
+    x = tf.placeholder(tf.float32, [batch_size, height, width, 3])
+    # 占位符，y是输出标签的占位符，shape=[样本数，类别数]
+    y = tf.placeholder(tf.int8, [batch_size, num_classes])
+    # 是否正在训练的变量，其变量类型是bool，为空
     is_training = tf.placeholder('bool', [])
 
     # Model
-    train_layers = FLAGS.train_layers.split(',')
-    model = ResNetModel(is_training, depth=FLAGS.resnet_depth, num_classes=FLAGS.num_classes)
+    train_layers = train_layers.split(',')  # 没看懂
+    model = ResNetModel(is_training, depth=resnet_depth, num_classes=num_classes)
     loss = model.loss(x, y)
-    train_op = model.optimize(FLAGS.learning_rate, train_layers)
+    train_op = model.optimize(learning_rate, train_layers)
 
     # Training accuracy of the model
     correct_pred = tf.equal(tf.argmax(model.prob, 1), tf.argmax(y, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
-    # Summaries
+    # 概要
     tf.summary.scalar('train_loss', loss)
     tf.summary.scalar('train_accuracy', accuracy)
     merged_summary = tf.summary.merge_all()
@@ -78,19 +79,19 @@ def main(_):
     saver = tf.train.Saver()
 
     # Batch preprocessors
-    multi_scale = FLAGS.multi_scale.split(',')
+    multi_scale = multi_scale.split(',')
     if len(multi_scale) == 2:
         multi_scale = [int(multi_scale[0]), int(multi_scale[1])]
     else:
         multi_scale = None
 
-    train_preprocessor = BatchPreprocessor(dataset_file_path=FLAGS.training_file, num_classes=FLAGS.num_classes,
+    train_preprocessor = BatchPreprocessor(dataset_file_path=training_file, num_classes=num_classes,
                                            output_size=[100, 100], horizontal_flip=True, shuffle=True, multi_scale=multi_scale)
-    val_preprocessor = BatchPreprocessor(dataset_file_path=FLAGS.val_file, num_classes=FLAGS.num_classes, output_size=[100, 100])
+    val_preprocessor = BatchPreprocessor(dataset_file_path=val_file, num_classes=num_classes, output_size=[100, 100])
 
     # Get the number of training/validation steps per epoch
-    train_batches_per_epoch = np.floor(len(train_preprocessor.labels) / FLAGS.batch_size).astype(np.int16)
-    val_batches_per_epoch = np.floor(len(val_preprocessor.labels) / FLAGS.batch_size).astype(np.int16)
+    train_batches_per_epoch = np.floor(len(train_preprocessor.labels) / batch_size).astype(np.int16)
+    val_batches_per_epoch = np.floor(len(val_preprocessor.labels) / batch_size).astype(np.int16)
 
 
     with tf.Session() as sess:
@@ -106,17 +107,17 @@ def main(_):
         print("{} Start training...".format(datetime.datetime.now()))
         print("{} Open Tensorboard at --logdir {}".format(datetime.datetime.now(), tensorboard_dir))
 
-        for epoch in range(FLAGS.num_epochs):
+        for epoch in range(num_epochs):
             print("{} Epoch number: {}".format(datetime.datetime.now(), epoch+1))
             step = 1
 
             # Start training
             while step < train_batches_per_epoch:
-                batch_xs, batch_ys = train_preprocessor.next_batch(FLAGS.batch_size)
+                batch_xs, batch_ys = train_preprocessor.next_batch(batch_size)
                 sess.run(train_op, feed_dict={x: batch_xs, y: batch_ys, is_training: True})
 
                 # Logging
-                if step % FLAGS.log_step == 0:
+                if step % log_step == 0:
                     s = sess.run(merged_summary, feed_dict={x: batch_xs, y: batch_ys, is_training: False})
                     train_writer.add_summary(s, epoch * train_batches_per_epoch + step)
 
@@ -128,7 +129,7 @@ def main(_):
             test_count = 0
 
             for _ in range(val_batches_per_epoch):
-                batch_tx, batch_ty = val_preprocessor.next_batch(FLAGS.batch_size)
+                batch_tx, batch_ty = val_preprocessor.next_batch(batch_size)
                 acc = sess.run(accuracy, feed_dict={x: batch_tx, y: batch_ty, is_training: False})
                 test_acc += acc
                 test_count += 1
@@ -153,5 +154,4 @@ def main(_):
             print("{} Model checkpoint saved at {}".format(datetime.datetime.now(), checkpoint_path))
 
 if __name__ == '__main__':
-    # app是tf的一个类，在flags设置好参数后，执行run
-    tf.app.run()
+    main(100,100,2)
